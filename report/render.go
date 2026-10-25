@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/archit2501/netreach/interval"
+	"github.com/archit2501/netreach/model"
 )
 
 // WriteJSON writes r as indented JSON.
@@ -41,7 +44,7 @@ func WriteMarkdown(w io.Writer, r Report) error {
 	b.WriteString("|---|---|---|---|---|---|---|\n")
 	for _, t := range r.Targets {
 		fmt.Fprintf(&b, "| %s | %s | %s | %s | %s | %s | %s |\n", targetLabel(t), t.PrivateIP, dash(t.PublicIP),
-			dash(t.Open.TCP), dash(t.Open.UDP), dash(t.Open.Other), dash(string(t.Severity)))
+			dash(t.Open.TCP), dash(t.Open.UDP), dash(protocolNames(t.Open.Other)), dash(string(t.Severity)))
 	}
 	word, column := "from", "Sources"
 	if r.Query.RemoteRole == "destination" {
@@ -114,6 +117,15 @@ func targetLabel(t Target) string {
 		label += " (" + t.Instance + ")"
 	}
 	return label
+}
+
+// protocolNames renders a protocol-number set string with well-known names.
+func protocolNames(text string) string {
+	s, err := interval.Parse(text)
+	if err != nil || s.IsEmpty() {
+		return text
+	}
+	return model.ProtocolName(s)
 }
 
 func dash(s string) string {

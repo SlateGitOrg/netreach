@@ -1,0 +1,6 @@
+BLOCKED: internet 198.51.100.20 -> vpn-gw (eni-vpn) tcp, initiator port 40000 -> service port 22
+   1. [ok  ] internet-gateway         igw-edge         enters vpc vpc-edge through igw-edge
+   2. [ok  ] public-ip                eni-vpn          public 54.20.0.5 maps to private 10.10.0.5
+   3. [DROP] nacl-inbound             acl-dmz          inbound rule 90 deny tcp 22 from 198.51.100.0/24 [subnet-dmz, target subnet]
+Same decision for: tcp 22 from 198.51.100.0/24
+Reference simulator: agrees

@@ -1,0 +1,310 @@
+{
+  "tool": "netreach",
+  "version": "0.1.0",
+  "snapshot": "public-web",
+  "query": {
+    "kind": "internet-ingress",
+    "from": "internet",
+    "remote": "0.0.0.0/0",
+    "remoteRole": "source"
+  },
+  "summary": {
+    "targets": 3,
+    "reachable": 1,
+    "findings": {
+      "info": 2,
+      "low": 1
+    }
+  },
+  "targets": [
+    {
+      "eni": "eni-app",
+      "name": "app-1",
+      "instance": "i-app1",
+      "subnet": "subnet-app",
+      "vpc": "vpc-shop",
+      "privateIp": "10.0.2.30",
+      "reachable": false,
+      "open": {
+        "tcp": "",
+        "udp": "",
+        "other": ""
+      },
+      "exposures": [],
+      "blocked": [
+        {
+          "step": "public-ip",
+          "component": "eni-app",
+          "detail": "eni-app has no public IPv4 address",
+          "flows": "tcp all ports; udp all ports; proto 0-5,7-16,18-255"
+        }
+      ],
+      "stats": {
+        "allowedPaths": 0,
+        "blockedPaths": 1,
+        "boxes": 2
+      }
+    },
+    {
+      "eni": "eni-db",
+      "name": "db-1",
+      "instance": "i-db1",
+      "subnet": "subnet-db",
+      "vpc": "vpc-shop",
+      "privateIp": "10.0.3.40",
+      "publicIp": "54.10.0.40",
+      "reachable": false,
+      "open": {
+        "tcp": "",
+        "udp": "",
+        "other": ""
+      },
+      "exposures": [],
+      "blocked": [
+        {
+          "step": "sg-inbound",
+          "component": "sg-db",
+          "detail": "no inbound rule in sg-db allows this traffic",
+          "flows": "tcp 0-5431,5433-65535; udp all ports; proto 0-5,7-16,18-255"
+        },
+        {
+          "step": "route-return",
+          "component": "rtb-private",
+          "detail": "10.0.0.0/16 -> local (local); return traffic would not leave through igw-shop (asymmetric path, dropped)",
+          "flows": "tcp 5432"
+        },
+        {
+          "step": "route-return",
+          "component": "rtb-private",
+          "detail": "0.0.0.0/0 -> nat-shop (nat-gateway); return traffic would not leave through igw-shop (asymmetric path, dropped)",
+          "flows": "tcp 5432"
+        }
+      ],
+      "stats": {
+        "allowedPaths": 0,
+        "blockedPaths": 3,
+        "boxes": 5
+      }
+    },
+    {
+      "eni": "eni-web",
+      "name": "web-1",
+      "instance": "i-web1",
+      "subnet": "subnet-public",
+      "vpc": "vpc-shop",
+      "privateIp": "10.0.1.20",
+      "publicIp": "54.10.0.20",
+      "reachable": true,
+      "open": {
+        "tcp": "22,80,443",
+        "udp": "",
+        "other": ""
+      },
+      "severity": "low",
+      "exposures": [
+        {
+          "protocol": "tcp",
+          "ports": "22",
+          "remote": [
+            "203.0.113.0/24"
+          ],
+          "remoteSummary": "203.0.113.0/24",
+          "initiatorPorts": "0-65535",
+          "severity": "low",
+          "reason": "from a restricted source range",
+          "path": [
+            {
+              "step": "internet-gateway",
+              "component": "igw-shop",
+              "allowed": true,
+              "detail": "enters vpc vpc-shop through igw-shop"
+            },
+            {
+              "step": "public-ip",
+              "component": "eni-web",
+              "allowed": true,
+              "detail": "public 54.10.0.20 maps to private 10.0.1.20"
+            },
+            {
+              "step": "nacl-inbound",
+              "component": "acl-default",
+              "allowed": true,
+              "detail": "inbound rule 100 allow all traffic from 0.0.0.0/0 [subnet-public, target subnet]"
+            },
+            {
+              "step": "sg-inbound",
+              "component": "sg-web",
+              "allowed": true,
+              "detail": "inbound rule #3 allows tcp 22 from 203.0.113.0/24 (office ssh)"
+            },
+            {
+              "step": "nacl-outbound-return",
+              "component": "acl-default",
+              "allowed": true,
+              "detail": "outbound rule 100 allow all traffic to 0.0.0.0/0 [subnet-public, target subnet]"
+            },
+            {
+              "step": "route-return",
+              "component": "rtb-public",
+              "allowed": true,
+              "detail": "0.0.0.0/0 -> igw-shop (internet-gateway); return traffic leaves through the internet gateway"
+            }
+          ]
+        },
+        {
+          "protocol": "tcp",
+          "ports": "80",
+          "remote": [
+            "0.0.0.0/5",
+            "8.0.0.0/7",
+            "10.1.0.0/16",
+            "10.2.0.0/15",
+            "10.4.0.0/14",
+            "10.8.0.0/13",
+            "10.16.0.0/12",
+            "10.32.0.0/11",
+            "10.64.0.0/10",
+            "10.128.0.0/9",
+            "11.0.0.0/8",
+            "12.0.0.0/6",
+            "16.0.0.0/4",
+            "32.0.0.0/3",
+            "64.0.0.0/2",
+            "128.0.0.0/1"
+          ],
+          "remoteSummary": "0.0.0.0/0 except 10.0.0.0/16",
+          "initiatorPorts": "0-65535",
+          "severity": "info",
+          "reason": "web ports open to the internet",
+          "path": [
+            {
+              "step": "internet-gateway",
+              "component": "igw-shop",
+              "allowed": true,
+              "detail": "enters vpc vpc-shop through igw-shop"
+            },
+            {
+              "step": "public-ip",
+              "component": "eni-web",
+              "allowed": true,
+              "detail": "public 54.10.0.20 maps to private 10.0.1.20"
+            },
+            {
+              "step": "nacl-inbound",
+              "component": "acl-default",
+              "allowed": true,
+              "detail": "inbound rule 100 allow all traffic from 0.0.0.0/0 [subnet-public, target subnet]"
+            },
+            {
+              "step": "sg-inbound",
+              "component": "sg-web",
+              "allowed": true,
+              "detail": "inbound rule #1 allows tcp 80 from 0.0.0.0/0 (http)"
+            },
+            {
+              "step": "nacl-outbound-return",
+              "component": "acl-default",
+              "allowed": true,
+              "detail": "outbound rule 100 allow all traffic to 0.0.0.0/0 [subnet-public, target subnet]"
+            },
+            {
+              "step": "route-return",
+              "component": "rtb-public",
+              "allowed": true,
+              "detail": "0.0.0.0/0 -> igw-shop (internet-gateway); return traffic leaves through the internet gateway"
+            }
+          ]
+        },
+        {
+          "protocol": "tcp",
+          "ports": "443",
+          "remote": [
+            "0.0.0.0/5",
+            "8.0.0.0/7",
+            "10.1.0.0/16",
+            "10.2.0.0/15",
+            "10.4.0.0/14",
+            "10.8.0.0/13",
+            "10.16.0.0/12",
+            "10.32.0.0/11",
+            "10.64.0.0/10",
+            "10.128.0.0/9",
+            "11.0.0.0/8",
+            "12.0.0.0/6",
+            "16.0.0.0/4",
+            "32.0.0.0/3",
+            "64.0.0.0/2",
+            "128.0.0.0/1"
+          ],
+          "remoteSummary": "0.0.0.0/0 except 10.0.0.0/16",
+          "initiatorPorts": "0-65535",
+          "severity": "info",
+          "reason": "web ports open to the internet",
+          "path": [
+            {
+              "step": "internet-gateway",
+              "component": "igw-shop",
+              "allowed": true,
+              "detail": "enters vpc vpc-shop through igw-shop"
+            },
+            {
+              "step": "public-ip",
+              "component": "eni-web",
+              "allowed": true,
+              "detail": "public 54.10.0.20 maps to private 10.0.1.20"
+            },
+            {
+              "step": "nacl-inbound",
+              "component": "acl-default",
+              "allowed": true,
+              "detail": "inbound rule 100 allow all traffic from 0.0.0.0/0 [subnet-public, target subnet]"
+            },
+            {
+              "step": "sg-inbound",
+              "component": "sg-web",
+              "allowed": true,
+              "detail": "inbound rule #2 allows tcp 443 from 0.0.0.0/0 (https)"
+            },
+            {
+              "step": "nacl-outbound-return",
+              "component": "acl-default",
+              "allowed": true,
+              "detail": "outbound rule 100 allow all traffic to 0.0.0.0/0 [subnet-public, target subnet]"
+            },
+            {
+              "step": "route-return",
+              "component": "rtb-public",
+              "allowed": true,
+              "detail": "0.0.0.0/0 -> igw-shop (internet-gateway); return traffic leaves through the internet gateway"
+            }
+          ]
+        }
+      ],
+      "blocked": [
+        {
+          "step": "sg-inbound",
+          "component": "sg-web",
+          "detail": "no inbound rule in sg-web allows this traffic",
+          "flows": "tcp 0-79,81-442,444-65535; udp all ports; proto 0-5,7-16,18-255"
+        },
+        {
+          "step": "route-return",
+          "component": "rtb-public",
+          "detail": "10.0.0.0/16 -> local (local); return traffic would not leave through igw-shop (asymmetric path, dropped)",
+          "flows": "tcp 80"
+        },
+        {
+          "step": "route-return",
+          "component": "rtb-public",
+          "detail": "10.0.0.0/16 -> local (local); return traffic would not leave through igw-shop (asymmetric path, dropped)",
+          "flows": "tcp 443"
+        }
+      ],
+      "stats": {
+        "allowedPaths": 3,
+        "blockedPaths": 3,
+        "boxes": 9
+      }
+    }
+  ]
+}
