@@ -92,8 +92,8 @@ The pieces are disjoint (piece *i* and any later piece differ in dimension
 *i*), at most *d* of them are non-empty, and together with `a ∩ o` they cover
 `a`. `Union(s, o)` is `s` plus the disjoint remainder `o \ s`.
 
-`Compact` merges boxes that agree in every dimension but one, using a hash of
-the other dimensions; it never changes the point set.
+`Space.Compact` merges boxes that agree in every dimension but one, using a
+hash of the other dimensions; it never changes the point set.
 
 `Cylinder(dim)` forgets one dimension (sets it to its full domain). With
 complement it expresses a universal quantifier:
