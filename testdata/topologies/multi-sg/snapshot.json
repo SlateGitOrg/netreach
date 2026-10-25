@@ -1,0 +1,40 @@
+{
+  "name": "multi-sg",
+  "description": "A host with two security groups (rules are a union), SSH admitted only from members of an admin group, and a NACL deny that applies across subnets but not within one.",
+  "vpcs": [{"id": "vpc-m", "cidrs": ["10.30.0.0/16"]}],
+  "internetGateways": [{"id": "igw-m", "vpc": "vpc-m"}],
+  "subnets": [
+    {"id": "subnet-m1", "vpc": "vpc-m", "cidr": "10.30.0.0/24", "routeTable": "rtb-m", "networkAcl": "acl-m"},
+    {"id": "subnet-m2", "vpc": "vpc-m", "cidr": "10.30.1.0/24", "routeTable": "rtb-m", "networkAcl": "acl-m"}
+  ],
+  "routeTables": [
+    {"id": "rtb-m", "vpc": "vpc-m", "routes": [{"destination": "0.0.0.0/0", "target": "igw-m"}]}
+  ],
+  "networkAcls": [
+    {"id": "acl-m", "vpc": "vpc-m",
+     "inbound": [
+       {"ruleNumber": 100, "protocol": "all", "action": "deny", "cidr": "10.30.0.0/16"},
+       {"ruleNumber": 200, "protocol": "all", "action": "allow", "cidr": "0.0.0.0/0"}
+     ],
+     "outbound": [{"ruleNumber": 100, "protocol": "all", "action": "allow", "cidr": "0.0.0.0/0"}]}
+  ],
+  "securityGroups": [
+    {"id": "sg-base", "vpc": "vpc-m",
+     "inbound": [{"protocol": "tcp", "ports": "22", "group": "sg-admin"}],
+     "outbound": [{"protocol": "all", "cidr": "0.0.0.0/0"}]},
+    {"id": "sg-web", "vpc": "vpc-m",
+     "inbound": [
+       {"protocol": "tcp", "ports": "80", "cidr": "0.0.0.0/0"},
+       {"protocol": "tcp", "ports": "443", "cidr": "0.0.0.0/0"}
+     ],
+     "outbound": []},
+    {"id": "sg-admin", "vpc": "vpc-m",
+     "inbound": [],
+     "outbound": [{"protocol": "tcp", "ports": "22", "cidr": "10.30.0.0/16"}]}
+  ],
+  "enis": [
+    {"id": "eni-host1", "name": "host-1", "subnet": "subnet-m1", "privateIp": "10.30.0.10", "publicIp": "54.50.0.10", "securityGroups": ["sg-base", "sg-web"]},
+    {"id": "eni-admin", "name": "admin-1", "subnet": "subnet-m1", "privateIp": "10.30.0.20", "securityGroups": ["sg-admin"]},
+    {"id": "eni-admin2", "name": "admin-2", "subnet": "subnet-m2", "privateIp": "10.30.1.20", "securityGroups": ["sg-admin"]}
+  ]
+}

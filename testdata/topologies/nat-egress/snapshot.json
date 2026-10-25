@@ -1,0 +1,39 @@
+{
+  "name": "nat-egress",
+  "description": "Private workers egress through a NAT gateway. The public subnet NACL denies TCP replies to ports 1024-2047, which breaks all TCP through the NAT (it may pick any port in 1024-65535) and constrains the client ports of a host with its own public IP.",
+  "vpcs": [{"id": "vpc-n", "cidrs": ["10.20.0.0/16"]}],
+  "internetGateways": [{"id": "igw-n", "vpc": "vpc-n"}],
+  "natGateways": [{"id": "nat-n", "subnet": "subnet-pub", "privateIp": "10.20.0.10", "publicIp": "52.20.0.10"}],
+  "subnets": [
+    {"id": "subnet-pub", "vpc": "vpc-n", "cidr": "10.20.0.0/24", "routeTable": "rtb-pub", "networkAcl": "acl-pub"},
+    {"id": "subnet-priv", "vpc": "vpc-n", "cidr": "10.20.1.0/24", "routeTable": "rtb-priv", "networkAcl": "acl-priv"}
+  ],
+  "routeTables": [
+    {"id": "rtb-pub", "vpc": "vpc-n", "routes": [{"destination": "0.0.0.0/0", "target": "igw-n"}]},
+    {"id": "rtb-priv", "vpc": "vpc-n", "routes": [{"destination": "0.0.0.0/0", "target": "nat-n"}]}
+  ],
+  "networkAcls": [
+    {"id": "acl-pub", "vpc": "vpc-n",
+     "inbound": [
+       {"ruleNumber": 100, "protocol": "all", "action": "allow", "cidr": "10.20.0.0/16"},
+       {"ruleNumber": 110, "protocol": "tcp", "ports": "1024-2047", "action": "deny", "cidr": "0.0.0.0/0"},
+       {"ruleNumber": 120, "protocol": "tcp", "ports": "1024-65535", "action": "allow", "cidr": "0.0.0.0/0"},
+       {"ruleNumber": 130, "protocol": "udp", "ports": "1024-65535", "action": "allow", "cidr": "0.0.0.0/0"}
+     ],
+     "outbound": [{"ruleNumber": 100, "protocol": "all", "action": "allow", "cidr": "0.0.0.0/0"}]},
+    {"id": "acl-priv", "vpc": "vpc-n",
+     "inbound": [{"ruleNumber": 100, "protocol": "all", "action": "allow", "cidr": "0.0.0.0/0"}],
+     "outbound": [
+       {"ruleNumber": 100, "protocol": "tcp", "ports": "443", "action": "allow", "cidr": "0.0.0.0/0"},
+       {"ruleNumber": 110, "protocol": "udp", "ports": "53", "action": "allow", "cidr": "0.0.0.0/0"},
+       {"ruleNumber": 120, "protocol": "all", "action": "allow", "cidr": "10.20.0.0/16"}
+     ]}
+  ],
+  "securityGroups": [
+    {"id": "sg-worker", "vpc": "vpc-n", "inbound": [], "outbound": [{"protocol": "all", "cidr": "0.0.0.0/0"}]}
+  ],
+  "enis": [
+    {"id": "eni-worker", "name": "worker-1", "subnet": "subnet-priv", "privateIp": "10.20.1.10", "securityGroups": ["sg-worker"]},
+    {"id": "eni-pubhost", "name": "pubhost-1", "subnet": "subnet-pub", "privateIp": "10.20.0.5", "publicIp": "54.40.0.5", "securityGroups": ["sg-worker"]}
+  ]
+}

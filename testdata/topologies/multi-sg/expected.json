@@ -1,0 +1,25 @@
+{
+  "comment": "SSH to host-1 works from admin-1 (same subnet, NACL not applied) but not admin-2 (NACL rule 100 denies intra-VPC traffic crossing subnets).",
+  "exposure": {
+    "eni-host1": {"tcp": "80,443", "udp": "", "other": ""},
+    "eni-admin": {"tcp": "", "udp": "", "other": ""},
+    "eni-admin2": {"tcp": "", "udp": "", "other": ""}
+  },
+  "sources": [
+    {"eni": "eni-host1", "proto": "tcp", "port": 80, "include": ["0.0.0.0/0"], "exclude": ["10.30.0.0/16"]}
+  ],
+  "internal": [
+    {"from": "eni-admin", "to": "eni-host1", "tcp": "22", "udp": "", "other": ""},
+    {"from": "eni-admin2", "to": "eni-host1", "tcp": "", "udp": "", "other": ""},
+    {"from": "eni-host1", "to": "eni-admin", "tcp": "", "udp": "", "other": ""}
+  ],
+  "probes": [
+    {"kind": "internal", "from": "eni-admin", "to": "eni-host1", "proto": "tcp", "initiatorPort": 40000, "servicePort": 22, "expect": "allow"},
+    {"kind": "internal", "from": "eni-admin2", "to": "eni-host1", "proto": "tcp", "initiatorPort": 40000, "servicePort": 22, "expect": "block", "step": "nacl-inbound", "component": "acl-m"},
+    {"kind": "internal", "from": "eni-admin", "to": "eni-host1", "proto": "tcp", "initiatorPort": 40000, "servicePort": 80, "expect": "block", "step": "sg-outbound", "component": "sg-admin"},
+    {"kind": "internet", "from": "8.8.8.8", "to": "eni-host1", "proto": "tcp", "initiatorPort": 40000, "servicePort": 80, "expect": "allow"},
+    {"kind": "internet", "from": "8.8.8.8", "to": "eni-host1", "proto": "tcp", "initiatorPort": 40000, "servicePort": 22, "expect": "block", "step": "sg-inbound", "component": "sg-base,sg-web"},
+    {"kind": "internet", "from": "8.8.8.8", "to": "eni-admin", "proto": "tcp", "initiatorPort": 40000, "servicePort": 22, "expect": "block", "step": "public-ip", "component": "eni-admin"},
+    {"kind": "internal", "from": "eni-host1", "to": "eni-admin", "proto": "tcp", "initiatorPort": 40000, "servicePort": 22, "expect": "block", "step": "sg-inbound", "component": "sg-admin"}
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "name": "route-shadow",
+  "description": "An API host whose return routes are shadowed by more-specific routes (a blackhole and a NAT detour), a host in a subnet with no default route, and a host in a VPC without an internet gateway.",
+  "vpcs": [
+    {"id": "vpc-r", "cidrs": ["172.16.0.0/16"]},
+    {"id": "vpc-noigw", "cidrs": ["172.17.0.0/16"]}
+  ],
+  "internetGateways": [{"id": "igw-r", "vpc": "vpc-r"}, {"id": "igw-spare"}],
+  "natGateways": [{"id": "nat-r", "subnet": "subnet-nat", "privateIp": "172.16.2.10", "publicIp": "52.30.0.10"}],
+  "subnets": [
+    {"id": "subnet-a", "vpc": "vpc-r", "cidr": "172.16.1.0/24", "routeTable": "rtb-a", "networkAcl": "acl-open"},
+    {"id": "subnet-nat", "vpc": "vpc-r", "cidr": "172.16.2.0/24", "routeTable": "rtb-nat", "networkAcl": "acl-open"},
+    {"id": "subnet-b", "vpc": "vpc-r", "cidr": "172.16.3.0/24", "routeTable": "rtb-b", "networkAcl": "acl-open"},
+    {"id": "subnet-c", "vpc": "vpc-noigw", "cidr": "172.17.1.0/24", "routeTable": "rtb-c", "networkAcl": "acl-c"}
+  ],
+  "routeTables": [
+    {"id": "rtb-a", "vpc": "vpc-r", "routes": [
+      {"destination": "172.16.0.0/16", "target": "local"},
+      {"destination": "0.0.0.0/0", "target": "igw-r"},
+      {"destination": "100.64.0.0/10", "target": "blackhole"},
+      {"destination": "203.0.113.0/24", "target": "nat-r"}
+    ]},
+    {"id": "rtb-nat", "vpc": "vpc-r", "routes": [{"destination": "0.0.0.0/0", "target": "igw-r"}]},
+    {"id": "rtb-b", "vpc": "vpc-r", "routes": []},
+    {"id": "rtb-c", "vpc": "vpc-noigw", "routes": []}
+  ],
+  "networkAcls": [
+    {"id": "acl-open", "vpc": "vpc-r",
+     "inbound": [{"ruleNumber": 100, "protocol": "all", "action": "allow", "cidr": "0.0.0.0/0"}],
+     "outbound": [{"ruleNumber": 100, "protocol": "all", "action": "allow", "cidr": "0.0.0.0/0"}]},
+    {"id": "acl-c", "vpc": "vpc-noigw",
+     "inbound": [{"ruleNumber": 100, "protocol": "all", "action": "allow", "cidr": "0.0.0.0/0"}],
+     "outbound": [{"ruleNumber": 100, "protocol": "all", "action": "allow", "cidr": "0.0.0.0/0"}]}
+  ],
+  "securityGroups": [
+    {"id": "sg-api", "vpc": "vpc-r",
+     "inbound": [{"protocol": "tcp", "ports": "443", "cidr": "0.0.0.0/0"}],
+     "outbound": [{"protocol": "all", "cidr": "0.0.0.0/0"}]},
+    {"id": "sg-island", "vpc": "vpc-noigw",
+     "inbound": [{"protocol": "tcp", "ports": "443", "cidr": "0.0.0.0/0"}],
+     "outbound": [{"protocol": "all", "cidr": "0.0.0.0/0"}]}
+  ],
+  "enis": [
+    {"id": "eni-api", "name": "api-1", "subnet": "subnet-a", "privateIp": "172.16.1.10", "publicIp": "54.30.0.10", "securityGroups": ["sg-api"]},
+    {"id": "eni-orphan", "name": "orphan-1", "subnet": "subnet-b", "privateIp": "172.16.3.10", "publicIp": "54.30.0.20", "securityGroups": ["sg-api"]},
+    {"id": "eni-island", "name": "island-1", "subnet": "subnet-c", "privateIp": "172.17.1.10", "publicIp": "54.30.0.30", "securityGroups": ["sg-island"]}
+  ]
+}

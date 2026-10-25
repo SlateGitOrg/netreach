@@ -1,0 +1,65 @@
+{
+  "name": "peering",
+  "description": "Three VPCs: A-B and B-C peered and active, A-C pending. Peering is not transitive, cross-VPC security group references work over an active peering, and a NACL in B blocks Redis from A.",
+  "vpcs": [
+    {"id": "vpc-a", "cidrs": ["10.1.0.0/16"]},
+    {"id": "vpc-b", "cidrs": ["10.2.0.0/16"]},
+    {"id": "vpc-c", "cidrs": ["10.3.0.0/16"]}
+  ],
+  "peerings": [
+    {"id": "pcx-ab", "requesterVpc": "vpc-a", "accepterVpc": "vpc-b"},
+    {"id": "pcx-bc", "requesterVpc": "vpc-b", "accepterVpc": "vpc-c", "status": "active"},
+    {"id": "pcx-ac", "requesterVpc": "vpc-a", "accepterVpc": "vpc-c", "status": "pending-acceptance"}
+  ],
+  "subnets": [
+    {"id": "subnet-a", "vpc": "vpc-a", "cidr": "10.1.1.0/24", "routeTable": "rtb-a", "networkAcl": "acl-a"},
+    {"id": "subnet-b", "vpc": "vpc-b", "cidr": "10.2.1.0/24", "routeTable": "rtb-b", "networkAcl": "acl-b"},
+    {"id": "subnet-c", "vpc": "vpc-c", "cidr": "10.3.1.0/24", "routeTable": "rtb-c", "networkAcl": "acl-c"}
+  ],
+  "routeTables": [
+    {"id": "rtb-a", "vpc": "vpc-a", "routes": [
+      {"destination": "10.2.0.0/16", "target": "pcx-ab"},
+      {"destination": "10.3.0.0/16", "target": "pcx-ac"}
+    ]},
+    {"id": "rtb-b", "vpc": "vpc-b", "routes": [
+      {"destination": "10.1.0.0/16", "target": "pcx-ab"},
+      {"destination": "10.3.0.0/16", "target": "pcx-bc"}
+    ]},
+    {"id": "rtb-c", "vpc": "vpc-c", "routes": [
+      {"destination": "10.2.0.0/16", "target": "pcx-bc"},
+      {"destination": "10.1.0.0/16", "target": "pcx-bc"}
+    ]}
+  ],
+  "networkAcls": [
+    {"id": "acl-a", "vpc": "vpc-a",
+     "inbound": [{"ruleNumber": 100, "protocol": "all", "action": "allow", "cidr": "0.0.0.0/0"}],
+     "outbound": [{"ruleNumber": 100, "protocol": "all", "action": "allow", "cidr": "0.0.0.0/0"}]},
+    {"id": "acl-b", "vpc": "vpc-b",
+     "inbound": [
+       {"ruleNumber": 50, "protocol": "tcp", "ports": "6379", "action": "deny", "cidr": "10.1.0.0/16"},
+       {"ruleNumber": 100, "protocol": "all", "action": "allow", "cidr": "0.0.0.0/0"}
+     ],
+     "outbound": [{"ruleNumber": 100, "protocol": "all", "action": "allow", "cidr": "0.0.0.0/0"}]},
+    {"id": "acl-c", "vpc": "vpc-c",
+     "inbound": [{"ruleNumber": 100, "protocol": "all", "action": "allow", "cidr": "0.0.0.0/0"}],
+     "outbound": [{"ruleNumber": 100, "protocol": "all", "action": "allow", "cidr": "0.0.0.0/0"}]}
+  ],
+  "securityGroups": [
+    {"id": "sg-a-client", "vpc": "vpc-a", "inbound": [], "outbound": [{"protocol": "all", "cidr": "0.0.0.0/0"}]},
+    {"id": "sg-b-db", "vpc": "vpc-b",
+     "inbound": [
+       {"protocol": "tcp", "ports": "5432", "group": "sg-a-client", "description": "postgres from A clients"},
+       {"protocol": "tcp", "ports": "6379", "cidr": "10.1.0.0/16"},
+       {"protocol": "tcp", "ports": "9000", "cidr": "10.3.0.0/16"}
+     ],
+     "outbound": [{"protocol": "all", "cidr": "0.0.0.0/0"}]},
+    {"id": "sg-c-svc", "vpc": "vpc-c",
+     "inbound": [{"protocol": "tcp", "ports": "80", "cidr": "10.0.0.0/8"}],
+     "outbound": [{"protocol": "all", "cidr": "0.0.0.0/0"}]}
+  ],
+  "enis": [
+    {"id": "eni-a", "name": "client-a", "subnet": "subnet-a", "privateIp": "10.1.1.10", "securityGroups": ["sg-a-client"]},
+    {"id": "eni-b", "name": "db-b", "subnet": "subnet-b", "privateIp": "10.2.1.10", "securityGroups": ["sg-b-db"]},
+    {"id": "eni-c", "name": "svc-c", "subnet": "subnet-c", "privateIp": "10.3.1.10", "securityGroups": ["sg-c-svc"]}
+  ]
+}

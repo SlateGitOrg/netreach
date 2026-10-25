@@ -1,0 +1,26 @@
+{
+  "comment": "No internet gateways, so no internet exposure. Internal reachability is decided by peering state, non-transitivity, cross-VPC SG references and an early NACL deny.",
+  "exposure": {
+    "eni-a": {"tcp": "", "udp": "", "other": ""},
+    "eni-b": {"tcp": "", "udp": "", "other": ""},
+    "eni-c": {"tcp": "", "udp": "", "other": ""}
+  },
+  "internal": [
+    {"from": "eni-a", "to": "eni-b", "tcp": "5432", "udp": "", "other": ""},
+    {"from": "eni-a", "to": "eni-c", "tcp": "", "udp": "", "other": ""},
+    {"from": "eni-b", "to": "eni-c", "tcp": "80", "udp": "", "other": ""},
+    {"from": "eni-c", "to": "eni-b", "tcp": "9000", "udp": "", "other": ""},
+    {"from": "eni-c", "to": "eni-a", "tcp": "", "udp": "", "other": ""}
+  ],
+  "probes": [
+    {"kind": "internal", "from": "eni-a", "to": "eni-b", "proto": "tcp", "initiatorPort": 40000, "servicePort": 5432, "expect": "allow"},
+    {"kind": "internal", "from": "eni-a", "to": "eni-b", "proto": "tcp", "initiatorPort": 40000, "servicePort": 6379, "expect": "block", "step": "nacl-inbound", "component": "acl-b"},
+    {"kind": "internal", "from": "eni-a", "to": "eni-c", "proto": "tcp", "initiatorPort": 40000, "servicePort": 80, "expect": "block", "step": "route", "component": "rtb-a"},
+    {"kind": "internal", "from": "eni-c", "to": "eni-a", "proto": "tcp", "initiatorPort": 40000, "servicePort": 80, "expect": "block", "step": "route", "component": "rtb-c"},
+    {"kind": "internal", "from": "eni-b", "to": "eni-c", "proto": "tcp", "initiatorPort": 40000, "servicePort": 80, "expect": "allow"},
+    {"kind": "internal", "from": "eni-c", "to": "eni-b", "proto": "tcp", "initiatorPort": 40000, "servicePort": 9000, "expect": "allow"},
+    {"kind": "internal", "from": "eni-c", "to": "eni-b", "proto": "tcp", "initiatorPort": 40000, "servicePort": 5432, "expect": "block", "step": "sg-inbound", "component": "sg-b-db"},
+    {"kind": "internal", "from": "eni-b", "to": "eni-a", "proto": "tcp", "initiatorPort": 40000, "servicePort": 22, "expect": "block", "step": "sg-inbound", "component": "sg-a-client"},
+    {"kind": "internet", "from": "8.8.8.8", "to": "eni-b", "proto": "tcp", "initiatorPort": 40000, "servicePort": 5432, "expect": "block", "step": "internet-gateway", "component": "vpc-b"}
+  ]
+}

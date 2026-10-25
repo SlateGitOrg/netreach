@@ -1,0 +1,25 @@
+{
+  "comment": "eni-worker: acl-priv allows only tcp 443 and udp 53 out; the NAT path then kills TCP because replies to NAT ports 1024-2047 are denied, leaving only udp 53. eni-pubhost egresses directly but its TCP clients must use ports 2048-65535 and ICMP replies are not admitted.",
+  "exposure": {
+    "eni-worker": {"tcp": "", "udp": "", "other": ""},
+    "eni-pubhost": {"tcp": "", "udp": "", "other": ""}
+  },
+  "egress": {
+    "eni-worker": {"tcp": "", "udp": "53", "other": ""},
+    "eni-pubhost": {"tcp": "0-65535", "udp": "0-65535", "other": ""}
+  },
+  "egressInitiatorPorts": [
+    {"eni": "eni-pubhost", "proto": "tcp", "port": 443, "ports": "2048-65535"},
+    {"eni": "eni-pubhost", "proto": "udp", "port": 53, "ports": "1024-65535"}
+  ],
+  "probes": [
+    {"kind": "egress", "from": "eni-worker", "to": "8.8.8.8", "proto": "udp", "initiatorPort": 40000, "servicePort": 53, "expect": "allow"},
+    {"kind": "egress", "from": "eni-worker", "to": "8.8.8.8", "proto": "tcp", "initiatorPort": 40000, "servicePort": 443, "expect": "block", "step": "nat-nacl-inbound-return", "component": "acl-pub"},
+    {"kind": "egress", "from": "eni-worker", "to": "8.8.8.8", "proto": "tcp", "initiatorPort": 40000, "servicePort": 80, "expect": "block", "step": "nacl-outbound", "component": "acl-priv"},
+    {"kind": "egress", "from": "eni-worker", "to": "8.8.8.8", "proto": "udp", "initiatorPort": 40000, "servicePort": 123, "expect": "block", "step": "nacl-outbound", "component": "acl-priv"},
+    {"kind": "egress", "from": "eni-pubhost", "to": "8.8.8.8", "proto": "tcp", "initiatorPort": 40000, "servicePort": 443, "expect": "allow"},
+    {"kind": "egress", "from": "eni-pubhost", "to": "8.8.8.8", "proto": "tcp", "initiatorPort": 1500, "servicePort": 443, "expect": "block", "step": "nacl-inbound-return", "component": "acl-pub"},
+    {"kind": "egress", "from": "eni-pubhost", "to": "8.8.8.8", "proto": "icmp", "initiatorPort": 0, "servicePort": 0, "expect": "block", "step": "nacl-inbound-return", "component": "acl-pub"},
+    {"kind": "internet", "from": "8.8.8.8", "to": "eni-pubhost", "proto": "tcp", "initiatorPort": 40000, "servicePort": 22, "expect": "block", "step": "nacl-inbound", "component": "acl-pub"}
+  ]
+}

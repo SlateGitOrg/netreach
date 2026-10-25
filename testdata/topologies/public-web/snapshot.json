@@ -1,0 +1,44 @@
+{
+  "name": "public-web",
+  "description": "Three-tier web app: public web tier, private app tier behind a NAT gateway, and a database that was given a public IP and a debugging rule it should not have.",
+  "vpcs": [{"id": "vpc-shop", "cidrs": ["10.0.0.0/16"]}],
+  "internetGateways": [{"id": "igw-shop", "vpc": "vpc-shop"}],
+  "natGateways": [{"id": "nat-shop", "subnet": "subnet-public", "privateIp": "10.0.1.10", "publicIp": "52.0.0.10"}],
+  "subnets": [
+    {"id": "subnet-public", "vpc": "vpc-shop", "cidr": "10.0.1.0/24", "routeTable": "rtb-public", "networkAcl": "acl-default"},
+    {"id": "subnet-app", "vpc": "vpc-shop", "cidr": "10.0.2.0/24", "routeTable": "rtb-private", "networkAcl": "acl-default"},
+    {"id": "subnet-db", "vpc": "vpc-shop", "cidr": "10.0.3.0/24", "routeTable": "rtb-private", "networkAcl": "acl-default"}
+  ],
+  "routeTables": [
+    {"id": "rtb-public", "vpc": "vpc-shop", "routes": [{"destination": "0.0.0.0/0", "target": "igw-shop"}]},
+    {"id": "rtb-private", "vpc": "vpc-shop", "routes": [{"destination": "0.0.0.0/0", "target": "nat-shop"}]}
+  ],
+  "networkAcls": [
+    {"id": "acl-default", "vpc": "vpc-shop",
+     "inbound": [{"ruleNumber": 100, "protocol": "all", "action": "allow", "cidr": "0.0.0.0/0"}],
+     "outbound": [{"ruleNumber": 100, "protocol": "all", "action": "allow", "cidr": "0.0.0.0/0"}]}
+  ],
+  "securityGroups": [
+    {"id": "sg-web", "vpc": "vpc-shop", "description": "public web tier",
+     "inbound": [
+       {"protocol": "tcp", "ports": "80", "cidr": "0.0.0.0/0", "description": "http"},
+       {"protocol": "tcp", "ports": "443", "cidr": "0.0.0.0/0", "description": "https"},
+       {"protocol": "tcp", "ports": "22", "cidr": "203.0.113.0/24", "description": "office ssh"}
+     ],
+     "outbound": [{"protocol": "all", "cidr": "0.0.0.0/0"}]},
+    {"id": "sg-app", "vpc": "vpc-shop",
+     "inbound": [{"protocol": "tcp", "ports": "8080", "group": "sg-web"}],
+     "outbound": [{"protocol": "all", "cidr": "0.0.0.0/0"}]},
+    {"id": "sg-db", "vpc": "vpc-shop",
+     "inbound": [
+       {"protocol": "tcp", "ports": "5432", "group": "sg-app"},
+       {"protocol": "tcp", "ports": "5432", "cidr": "0.0.0.0/0", "description": "temporary debugging"}
+     ],
+     "outbound": [{"protocol": "all", "cidr": "0.0.0.0/0"}]}
+  ],
+  "enis": [
+    {"id": "eni-web", "name": "web-1", "instance": "i-web1", "subnet": "subnet-public", "privateIp": "10.0.1.20", "publicIp": "54.10.0.20", "securityGroups": ["sg-web"]},
+    {"id": "eni-app", "name": "app-1", "instance": "i-app1", "subnet": "subnet-app", "privateIp": "10.0.2.30", "securityGroups": ["sg-app"]},
+    {"id": "eni-db", "name": "db-1", "instance": "i-db1", "subnet": "subnet-db", "privateIp": "10.0.3.40", "publicIp": "54.10.0.40", "securityGroups": ["sg-db"]}
+  ]
+}

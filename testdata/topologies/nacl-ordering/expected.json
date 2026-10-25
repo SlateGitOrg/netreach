@@ -1,0 +1,22 @@
+{
+  "comment": "Rule 90 denies SSH from 198.51.100.0/24 before rule 100 allows it; rule 120 (deny all UDP) shadows rule 130 (OpenVPN); 8443 is open in the SG but not in the NACL; return traffic is only allowed to client ports 1024-65535.",
+  "exposure": {
+    "eni-vpn": {"tcp": "22,443", "udp": "", "other": "1"}
+  },
+  "sources": [
+    {"eni": "eni-vpn", "proto": "tcp", "port": 22, "include": ["0.0.0.0/0"], "exclude": ["198.51.100.0/24", "10.10.0.0/16"]},
+    {"eni": "eni-vpn", "proto": "tcp", "port": 443, "include": ["0.0.0.0/0"], "exclude": ["10.10.0.0/16"]}
+  ],
+  "initiatorPorts": [
+    {"eni": "eni-vpn", "proto": "tcp", "port": 22, "ports": "1024-65535"}
+  ],
+  "probes": [
+    {"kind": "internet", "from": "198.51.100.20", "to": "eni-vpn", "proto": "tcp", "initiatorPort": 40000, "servicePort": 22, "expect": "block", "step": "nacl-inbound", "component": "acl-dmz"},
+    {"kind": "internet", "from": "192.0.2.1", "to": "eni-vpn", "proto": "tcp", "initiatorPort": 40000, "servicePort": 22, "expect": "allow"},
+    {"kind": "internet", "from": "192.0.2.1", "to": "eni-vpn", "proto": "tcp", "initiatorPort": 80, "servicePort": 22, "expect": "block", "step": "nacl-outbound-return", "component": "acl-dmz"},
+    {"kind": "internet", "from": "192.0.2.1", "to": "eni-vpn", "proto": "udp", "initiatorPort": 40000, "servicePort": 1194, "expect": "block", "step": "nacl-inbound", "component": "acl-dmz"},
+    {"kind": "internet", "from": "192.0.2.1", "to": "eni-vpn", "proto": "tcp", "initiatorPort": 40000, "servicePort": 8443, "expect": "block", "step": "nacl-inbound", "component": "acl-dmz"},
+    {"kind": "internet", "from": "192.0.2.1", "to": "eni-vpn", "proto": "icmp", "initiatorPort": 0, "servicePort": 0, "expect": "allow"},
+    {"kind": "internet", "from": "192.0.2.1", "to": "eni-vpn", "proto": "47", "initiatorPort": 0, "servicePort": 0, "expect": "block", "step": "nacl-inbound", "component": "acl-dmz"}
+  ]
+}

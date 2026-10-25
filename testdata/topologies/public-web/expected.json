@@ -1,0 +1,33 @@
+{
+  "comment": "Hand-derived ground truth. eni-db has a public IP and a 0.0.0.0/0 rule, but its subnet routes 0.0.0.0/0 to the NAT gateway, so internet replies never reach the IGW: not exposed.",
+  "exposure": {
+    "eni-web": {"tcp": "22,80,443", "udp": "", "other": ""},
+    "eni-app": {"tcp": "", "udp": "", "other": ""},
+    "eni-db": {"tcp": "", "udp": "", "other": ""}
+  },
+  "sources": [
+    {"eni": "eni-web", "proto": "tcp", "port": 22, "include": ["203.0.113.0/24"], "exclude": []},
+    {"eni": "eni-web", "proto": "tcp", "port": 443, "include": ["0.0.0.0/0"], "exclude": ["10.0.0.0/16"]}
+  ],
+  "egress": {
+    "eni-web": {"tcp": "0-65535", "udp": "0-65535", "other": "0-5,7-16,18-255"},
+    "eni-app": {"tcp": "0-65535", "udp": "0-65535", "other": "1"}
+  },
+  "probes": [
+    {"kind": "internet", "from": "198.51.100.7", "to": "eni-web", "proto": "tcp", "initiatorPort": 50000, "servicePort": 443, "expect": "allow"},
+    {"kind": "internet", "from": "198.51.100.7", "to": "eni-web", "proto": "tcp", "initiatorPort": 50000, "servicePort": 22, "expect": "block", "step": "sg-inbound", "component": "sg-web"},
+    {"kind": "internet", "from": "203.0.113.9", "to": "eni-web", "proto": "tcp", "initiatorPort": 50000, "servicePort": 22, "expect": "allow"},
+    {"kind": "internet", "from": "198.51.100.7", "to": "eni-web", "proto": "udp", "initiatorPort": 50000, "servicePort": 53, "expect": "block", "step": "sg-inbound", "component": "sg-web"},
+    {"kind": "internet", "from": "10.0.9.9", "to": "eni-web", "proto": "tcp", "initiatorPort": 50000, "servicePort": 443, "expect": "block", "step": "route-return", "component": "rtb-public"},
+    {"kind": "internet", "from": "198.51.100.7", "to": "eni-app", "proto": "tcp", "initiatorPort": 50000, "servicePort": 8080, "expect": "block", "step": "public-ip", "component": "eni-app"},
+    {"kind": "internet", "from": "198.51.100.7", "to": "eni-db", "proto": "tcp", "initiatorPort": 50000, "servicePort": 5432, "expect": "block", "step": "route-return", "component": "rtb-private"},
+    {"kind": "internal", "from": "eni-web", "to": "eni-app", "proto": "tcp", "initiatorPort": 40000, "servicePort": 8080, "expect": "allow"},
+    {"kind": "internal", "from": "eni-app", "to": "eni-db", "proto": "tcp", "initiatorPort": 40000, "servicePort": 5432, "expect": "allow"},
+    {"kind": "internal", "from": "eni-web", "to": "eni-db", "proto": "tcp", "initiatorPort": 40000, "servicePort": 5432, "expect": "allow"},
+    {"kind": "internal", "from": "eni-app", "to": "eni-db", "proto": "tcp", "initiatorPort": 40000, "servicePort": 22, "expect": "block", "step": "sg-inbound", "component": "sg-db"},
+    {"kind": "internal", "from": "eni-db", "to": "eni-app", "proto": "tcp", "initiatorPort": 40000, "servicePort": 8080, "expect": "block", "step": "sg-inbound", "component": "sg-app"},
+    {"kind": "egress", "from": "eni-app", "to": "93.184.216.34", "proto": "tcp", "initiatorPort": 40000, "servicePort": 443, "expect": "allow"},
+    {"kind": "egress", "from": "eni-web", "to": "93.184.216.34", "proto": "tcp", "initiatorPort": 40000, "servicePort": 443, "expect": "allow"},
+    {"kind": "egress", "from": "eni-db", "to": "93.184.216.34", "proto": "udp", "initiatorPort": 40000, "servicePort": 123, "expect": "allow"}
+  ]
+}

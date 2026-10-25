@@ -1,0 +1,23 @@
+{
+  "comment": "Return routes for 100.64.0.0/10 (blackhole) and 203.0.113.0/24 (NAT) do not use the IGW, so those sources cannot reach eni-api; eni-orphan has no route out; vpc-noigw has no IGW (igw-spare is detached).",
+  "exposure": {
+    "eni-api": {"tcp": "443", "udp": "", "other": ""},
+    "eni-orphan": {"tcp": "", "udp": "", "other": ""},
+    "eni-island": {"tcp": "", "udp": "", "other": ""}
+  },
+  "sources": [
+    {"eni": "eni-api", "proto": "tcp", "port": 443, "include": ["0.0.0.0/0"], "exclude": ["172.16.0.0/16", "100.64.0.0/10", "203.0.113.0/24"]}
+  ],
+  "probes": [
+    {"kind": "internet", "from": "100.64.1.1", "to": "eni-api", "proto": "tcp", "initiatorPort": 40000, "servicePort": 443, "expect": "block", "step": "route-return", "component": "rtb-a"},
+    {"kind": "internet", "from": "203.0.113.50", "to": "eni-api", "proto": "tcp", "initiatorPort": 40000, "servicePort": 443, "expect": "block", "step": "route-return", "component": "rtb-a"},
+    {"kind": "internet", "from": "8.8.8.8", "to": "eni-api", "proto": "tcp", "initiatorPort": 40000, "servicePort": 443, "expect": "allow"},
+    {"kind": "internet", "from": "8.8.8.8", "to": "eni-orphan", "proto": "tcp", "initiatorPort": 40000, "servicePort": 443, "expect": "block", "step": "route-return", "component": "rtb-b"},
+    {"kind": "internet", "from": "8.8.8.8", "to": "eni-island", "proto": "tcp", "initiatorPort": 40000, "servicePort": 443, "expect": "block", "step": "internet-gateway", "component": "vpc-noigw"},
+    {"kind": "egress", "from": "eni-api", "to": "100.64.5.5", "proto": "tcp", "initiatorPort": 40000, "servicePort": 443, "expect": "block", "step": "route", "component": "rtb-a"},
+    {"kind": "egress", "from": "eni-api", "to": "203.0.113.50", "proto": "tcp", "initiatorPort": 40000, "servicePort": 443, "expect": "allow"},
+    {"kind": "egress", "from": "eni-api", "to": "8.8.8.8", "proto": "udp", "initiatorPort": 40000, "servicePort": 53, "expect": "allow"},
+    {"kind": "egress", "from": "eni-orphan", "to": "8.8.8.8", "proto": "tcp", "initiatorPort": 40000, "servicePort": 443, "expect": "block", "step": "route", "component": "rtb-b"},
+    {"kind": "egress", "from": "eni-island", "to": "8.8.8.8", "proto": "tcp", "initiatorPort": 40000, "servicePort": 443, "expect": "block", "step": "route", "component": "rtb-c"}
+  ]
+}

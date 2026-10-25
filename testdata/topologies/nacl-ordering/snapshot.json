@@ -1,0 +1,42 @@
+{
+  "name": "nacl-ordering",
+  "description": "VPN/SSH gateway whose stateless NACL has an early deny, a shadowed allow, and an outbound ephemeral-port rule that constrains client source ports.",
+  "vpcs": [{"id": "vpc-edge", "cidrs": ["10.10.0.0/16"]}],
+  "internetGateways": [{"id": "igw-edge", "vpc": "vpc-edge"}],
+  "subnets": [
+    {"id": "subnet-dmz", "vpc": "vpc-edge", "cidr": "10.10.0.0/24", "routeTable": "rtb-dmz", "networkAcl": "acl-dmz"}
+  ],
+  "routeTables": [
+    {"id": "rtb-dmz", "vpc": "vpc-edge", "routes": [{"destination": "0.0.0.0/0", "target": "igw-edge"}]}
+  ],
+  "networkAcls": [
+    {"id": "acl-dmz", "vpc": "vpc-edge",
+     "inbound": [
+       {"ruleNumber": 130, "protocol": "udp", "ports": "1194", "action": "allow", "cidr": "0.0.0.0/0"},
+       {"ruleNumber": 90, "protocol": "tcp", "ports": "22", "action": "deny", "cidr": "198.51.100.0/24"},
+       {"ruleNumber": 100, "protocol": "tcp", "ports": "22", "action": "allow", "cidr": "0.0.0.0/0"},
+       {"ruleNumber": 110, "protocol": "tcp", "ports": "443", "action": "allow", "cidr": "0.0.0.0/0"},
+       {"ruleNumber": 120, "protocol": "udp", "action": "deny", "cidr": "0.0.0.0/0"},
+       {"ruleNumber": 140, "protocol": "icmp", "action": "allow", "cidr": "0.0.0.0/0"}
+     ],
+     "outbound": [
+       {"ruleNumber": 100, "protocol": "tcp", "ports": "1024-65535", "action": "allow", "cidr": "0.0.0.0/0"},
+       {"ruleNumber": 110, "protocol": "udp", "ports": "1024-65535", "action": "allow", "cidr": "0.0.0.0/0"},
+       {"ruleNumber": 120, "protocol": "icmp", "action": "allow", "cidr": "0.0.0.0/0"}
+     ]}
+  ],
+  "securityGroups": [
+    {"id": "sg-gw", "vpc": "vpc-edge",
+     "inbound": [
+       {"protocol": "tcp", "ports": "22", "cidr": "0.0.0.0/0"},
+       {"protocol": "tcp", "ports": "443", "cidr": "0.0.0.0/0"},
+       {"protocol": "tcp", "ports": "8443", "cidr": "0.0.0.0/0"},
+       {"protocol": "udp", "ports": "1194", "cidr": "0.0.0.0/0"},
+       {"protocol": "icmp", "cidr": "0.0.0.0/0"}
+     ],
+     "outbound": [{"protocol": "all", "cidr": "0.0.0.0/0"}]}
+  ],
+  "enis": [
+    {"id": "eni-vpn", "name": "vpn-gw", "instance": "i-vpn", "subnet": "subnet-dmz", "privateIp": "10.10.0.5", "publicIp": "54.20.0.5", "securityGroups": ["sg-gw"]}
+  ]
+}
