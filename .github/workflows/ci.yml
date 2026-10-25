@@ -23,8 +23,13 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
           cache: true
-      - name: Install golangci-lint v2.13.2 (prebuilt binary)
-        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v2.13.2/install.sh | sh -s -- -b "$(go env GOPATH)/bin" v2.13.2
+      # golangci-lint type-checks against the export data written by the
+      # installed Go toolchain. Go 1.27.3 writes export data version 5, which
+      # the x/tools importer bundled in golangci-lint v2.13.2 cannot read
+      # ("export data version 5 is greater than maximum supported version 4").
+      # v2.15.0 reads it and still works with the Go 1.23 leg.
+      - name: Install golangci-lint v2.15.0 (prebuilt binary)
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v2.15.0/install.sh | sh -s -- -b "$(go env GOPATH)/bin" v2.15.0
       - name: make check (gofmt, vet, golangci-lint, race tests, coverage gate)
         run: make check
       - name: Ground truth on fixture topologies
