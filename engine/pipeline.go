@@ -12,7 +12,6 @@ type Step string
 
 // Steps, in the order they can occur.
 const (
-	StepSource           Step = "source"
 	StepSGOutbound       Step = "sg-outbound"
 	StepRoute            Step = "route"
 	StepNACLOutbound     Step = "nacl-outbound"
