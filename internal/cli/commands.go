@@ -319,6 +319,13 @@ func (e *env) validate(args []string) error {
 	}
 	fmt.Fprintf(e.stdout, "ok: %s: %d VPCs, %d subnets, %d route tables (%d routes), %d SGs + %d NACLs (%d rules), %d ENIs\n",
 		n.Name, len(n.VPCs), len(n.Subnets), len(n.RouteTables), routes, len(n.SGs), len(n.ACLs), rules, len(n.ENIs))
+	warnings := engine.Lint(n)
+	for _, w := range warnings {
+		fmt.Fprintf(e.stdout, "warning: %s\n", w)
+	}
+	if len(warnings) == 0 {
+		fmt.Fprintln(e.stdout, "no warnings")
+	}
 	return nil
 }
 
