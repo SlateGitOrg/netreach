@@ -55,8 +55,5 @@ Blocked flows (deciding hop):
 | nacl-inbound | acl-dmz | inbound rule 90 deny tcp 22 from 198.51.100.0/24 [subnet-dmz, target subnet] | tcp 22 |
 | nacl-inbound | acl-dmz | inbound rule 120 deny udp all ports from 0.0.0.0/0 [subnet-dmz, target subnet] | udp all ports |
 | nacl-inbound | acl-dmz | inbound rule * deny all traffic (implicit default) [subnet-dmz, target subnet] | tcp 0-21,23-442,444-65535; proto 0,2-5,7-16,18-255 |
-| nacl-outbound-return | acl-dmz | outbound rule * deny all traffic (implicit default) [subnet-dmz, target subnet] | tcp 22 |
-| nacl-outbound-return | acl-dmz | outbound rule * deny all traffic (implicit default) [subnet-dmz, target subnet] | tcp 443 |
-| route-return | rtb-dmz | 10.10.0.0/16 -> local (local); return traffic would not leave through igw-edge (asymmetric path, dropped) | tcp 22 |
-| route-return | rtb-dmz | 10.10.0.0/16 -> local (local); return traffic would not leave through igw-edge (asymmetric path, dropped) | tcp 443 |
-| route-return | rtb-dmz | 10.10.0.0/16 -> local (local); return traffic would not leave through igw-edge (asymmetric path, dropped) | proto icmp |
+| nacl-outbound-return | acl-dmz | outbound rule * deny all traffic (implicit default) [subnet-dmz, target subnet] | tcp 22,443 |
+| route-return | rtb-dmz | 10.10.0.0/16 -> local (local); return traffic would not leave through igw-edge (asymmetric path, dropped) | tcp 22,443; proto icmp |

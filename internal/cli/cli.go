@@ -38,16 +38,31 @@ sources), or an ENI/instance ID. Run "netreach COMMAND -h" for flags.
 
 type env struct {
 	stdout, stderr io.Writer
+	out, errOut    *printer
 	log            *slog.Logger
+}
+
+// printer writes formatted output and remembers the first write error, so
+// commands can print freely and report a failed write (e.g. a closed pipe)
+// once at the end.
+type printer struct {
+	w   io.Writer
+	err error
+}
+
+func (p *printer) printf(format string, args ...any) {
+	if p.err == nil {
+		_, p.err = fmt.Fprintf(p.w, format, args...)
+	}
 }
 
 // Run executes the command line args (without the program name).
 func Run(args []string, stdout, stderr io.Writer) int {
+	e := &env{stdout: stdout, stderr: stderr, out: &printer{w: stdout}, errOut: &printer{w: stderr}}
 	if len(args) == 0 {
-		fmt.Fprint(stderr, usage)
+		e.errOut.printf("%s", usage)
 		return ExitUsage
 	}
-	e := &env{stdout: stdout, stderr: stderr}
 	cmd, rest := args[0], args[1:]
 	var err error
 	switch cmd {
@@ -64,12 +79,15 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	case "bench":
 		err = e.bench(rest)
 	case "version":
-		fmt.Fprintf(stdout, "netreach %s\n", report.Version)
+		e.out.printf("netreach %s\n", report.Version)
 	case "-h", "-help", "--help", "help":
-		fmt.Fprint(stdout, usage)
+		e.out.printf("%s", usage)
 	default:
-		fmt.Fprintf(stderr, "unknown command %q\n\n%s", cmd, usage)
+		e.errOut.printf("unknown command %q\n\n%s", cmd, usage)
 		return ExitUsage
+	}
+	if err == nil && e.out.err != nil {
+		err = fmt.Errorf("write output: %w", e.out.err)
 	}
 	return e.exitCode(err)
 }
@@ -94,7 +112,7 @@ func (e *env) exitCode(err error) int {
 	if errors.Is(err, flag.ErrHelp) {
 		return ExitOK
 	}
-	fmt.Fprintf(e.stderr, "netreach: %v\n", err)
+	e.errOut.printf("netreach: %v\n", err)
 	var x *exitError
 	if errors.As(err, &x) {
 		return x.code

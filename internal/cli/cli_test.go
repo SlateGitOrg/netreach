@@ -33,6 +33,8 @@ func TestGoldenReports(t *testing.T) {
 		{"nacl-ordering.md", []string{"analyze", "-s", snap("nacl-ordering")}},
 		{"nat-egress-egress.md", []string{"analyze", "-s", snap("nat-egress"), "-egress", "-from", "all"}},
 		{"peering-from-a.md", []string{"analyze", "-s", snap("peering"), "-from", "eni-a"}},
+		{"why-nat.txt", []string{"why", "-s", snap("nat-egress"), "-from", "eni-worker", "-to", "8.8.8.8",
+			"-proto", "tcp", "-port", "443", "-sport", "40000"}},
 		{"why-nacl.txt", []string{"why", "-s", snap("nacl-ordering"), "-from", "198.51.100.20", "-to", "eni-vpn",
 			"-proto", "tcp", "-port", "22", "-sport", "40000"}},
 	}
@@ -160,5 +162,19 @@ func TestInstanceWithSeveralENIsIsAmbiguous(t *testing.T) {
 	_, errOut, code := run(t, "analyze", "-s", path, "-from", "i-dup")
 	if code != ExitUsage || !strings.Contains(errOut, "has 2 interfaces") {
 		t.Fatalf("exit %d: %s", code, errOut)
+	}
+}
+
+type failingWriter struct{}
+
+func (failingWriter) Write([]byte) (int, error) { return 0, os.ErrClosed }
+
+func TestWriteFailureIsReported(t *testing.T) {
+	var errOut bytes.Buffer
+	if code := Run([]string{"version"}, failingWriter{}, &errOut); code != ExitFailure {
+		t.Fatalf("exit %d", code)
+	}
+	if !strings.Contains(errOut.String(), "write output") {
+		t.Fatal(errOut.String())
 	}
 }

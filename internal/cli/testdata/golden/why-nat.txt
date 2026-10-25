@@ -1,0 +1,12 @@
+BLOCKED: worker-1 (eni-worker) -> internet 8.8.8.8 tcp, initiator port 40000 -> service port 443
+   1. [ok  ] sg-outbound              sg-worker        outbound rule #1 allows all traffic to 0.0.0.0/0
+   2. [ok  ] route                    rtb-priv         0.0.0.0/0 -> nat-n (nat-gateway)
+   3. [ok  ] nacl-outbound            acl-priv         outbound rule 100 allow tcp 443 to 0.0.0.0/0 [subnet-priv, source subnet]
+   4. [ok  ] nat-nacl-inbound         acl-pub          inbound rule 100 allow all traffic from 10.20.0.0/16 [subnet-pub, NAT subnet]
+   5. [ok  ] nat-gateway              nat-n            source translated to 52.20.0.10:1024-65535
+   6. [ok  ] nat-route                rtb-pub          0.0.0.0/0 -> igw-n (internet-gateway)
+   7. [ok  ] nat-nacl-outbound        acl-pub          outbound rule 100 allow all traffic to 0.0.0.0/0 [subnet-pub, NAT subnet]
+   8. [DROP] nat-nacl-inbound-return  acl-pub          inbound denies replies to some NAT ports in 1024-65535 [subnet-pub, NAT subnet]
+      denied NAT ports for this destination and protocol: 1024-2047
+Same decision for: tcp 443 to 0.0.0.0/0 except 10.20.0.0/16
+Reference simulator: agrees

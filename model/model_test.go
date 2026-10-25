@@ -11,8 +11,8 @@ import (
 // base returns a small valid snapshot that each invalid case mutates.
 func base() *Snapshot {
 	return &Snapshot{
-		Name: "t",
-		VPCs: []VPC{{ID: "vpc-1", CIDRs: []string{"10.0.0.0/16"}}, {ID: "vpc-2", CIDRs: []string{"10.1.0.0/16"}}},
+		Name:             "t",
+		VPCs:             []VPC{{ID: "vpc-1", CIDRs: []string{"10.0.0.0/16"}}, {ID: "vpc-2", CIDRs: []string{"10.1.0.0/16"}}},
 		InternetGateways: []InternetGateway{{ID: "igw-1", VPC: "vpc-1"}},
 		Peerings:         []Peering{{ID: "pcx-1", RequesterVPC: "vpc-1", AccepterVPC: "vpc-2"}},
 		NATGateways:      []NATGateway{{ID: "nat-1", Subnet: "subnet-1", PrivateIP: "10.0.1.5", PublicIP: "52.0.0.1"}},

@@ -193,7 +193,7 @@ func (e *env) write(path string, fn func(io.Writer) error) error {
 	if err := f.Close(); err != nil {
 		return err
 	}
-	fmt.Fprintf(e.stderr, "wrote %s\n", path)
+	e.errOut.printf("wrote %s\n", path)
 	return nil
 }
 
@@ -227,6 +227,7 @@ func (e *env) why(args []string) error {
 	var remote uint32
 	var simV sim.Verdict
 	var desc string
+	word := "from"
 	switch {
 	case isENIRef(n, *from) && isENIRef(n, *to):
 		src, err := resolveENI(n, *from)
@@ -252,8 +253,9 @@ func (e *env) why(args []string) error {
 			return usageErr("-to must be an ENI/instance or an IPv4 address: %v", err)
 		}
 		res = an.Egress(src, interval.Full(interval.MaxIPv4))
-		simV = sim.Egress(n, src, remote, pkt)
+		simV = sim.Egress(src, remote, pkt)
 		desc = fmt.Sprintf("%s -> internet %s", src.Label(), *to)
+		word = "to"
 	default:
 		if remote, err = interval.ParseIPv4(*from); err != nil {
 			return usageErr("-from must be an ENI/instance or an IPv4 address: %v", err)
@@ -263,7 +265,7 @@ func (e *env) why(args []string) error {
 			return err
 		}
 		res = an.InternetIngress(interval.Full(interval.MaxIPv4), dst)
-		simV = sim.InternetIngress(n, remote, dst, pkt)
+		simV = sim.InternetIngress(remote, dst, pkt)
 		desc = fmt.Sprintf("internet %s -> %s", *from, dst.Label())
 	}
 	flow := engine.Flow{Remote: remote, Proto: p, InitiatorPort: pkt.InitiatorPort, ServicePort: pkt.ServicePort}
@@ -273,17 +275,23 @@ func (e *env) why(args []string) error {
 		verdict = "ALLOWED"
 	}
 	c := flow.Canonical()
-	fmt.Fprintf(e.stdout, "%s: %s %s, initiator port %d -> service port %d\n", verdict, desc,
+	e.out.printf("%s: %s %s, initiator port %d -> service port %d\n", verdict, desc,
 		model.ProtocolName(protoSet), c.InitiatorPort, c.ServicePort)
 	for i, h := range frag.Hops {
 		mark := "ok  "
 		if !h.Allowed {
 			mark = "DROP"
 		}
-		fmt.Fprintf(e.stdout, "  %2d. [%s] %-24s %-16s %s\n", i+1, mark, h.Step, h.Component, h.Detail)
+		e.out.printf("  %2d. [%s] %-24s %-16s %s\n", i+1, mark, h.Step, h.Component, h.Detail)
+		if !h.Allowed && h.Step == engine.StepNATReturnPorts {
+			if acl := n.ACL(h.Component); acl != nil {
+				e.out.printf("      denied NAT ports for this destination and protocol: %s\n",
+					engine.NATReturnDenied(acl, remote, p))
+			}
+		}
 	}
 	sum := report.Summarize(frag.Space)
-	fmt.Fprintf(e.stdout, "Same decision for: %s from %s\n", sum, report.DescribeAddresses(frag.Space.Project(engine.DimRemote)))
+	e.out.printf("Same decision for: %s %s %s\n", sum, word, report.DescribeAddresses(frag.Space.Project(engine.DimRemote)))
 	engineV := sim.Verdict{Allowed: allowed}
 	if !allowed {
 		h := frag.Blocker()
@@ -292,7 +300,7 @@ func (e *env) why(args []string) error {
 	if engineV != simV {
 		return fmt.Errorf("internal inconsistency: simulator says %+v", simV)
 	}
-	fmt.Fprintln(e.stdout, "Reference simulator: agrees")
+	e.out.printf("Reference simulator: agrees\n")
 	return nil
 }
 
@@ -317,14 +325,14 @@ func (e *env) validate(args []string) error {
 	for _, rt := range n.RouteTables {
 		routes += len(rt.Routes)
 	}
-	fmt.Fprintf(e.stdout, "ok: %s: %d VPCs, %d subnets, %d route tables (%d routes), %d SGs + %d NACLs (%d rules), %d ENIs\n",
+	e.out.printf("ok: %s: %d VPCs, %d subnets, %d route tables (%d routes), %d SGs + %d NACLs (%d rules), %d ENIs\n",
 		n.Name, len(n.VPCs), len(n.Subnets), len(n.RouteTables), routes, len(n.SGs), len(n.ACLs), rules, len(n.ENIs))
 	warnings := engine.Lint(n)
 	for _, w := range warnings {
-		fmt.Fprintf(e.stdout, "warning: %s\n", w)
+		e.out.printf("warning: %s\n", w)
 	}
 	if len(warnings) == 0 {
-		fmt.Fprintln(e.stdout, "no warnings")
+		e.out.printf("no warnings\n")
 	}
 	return nil
 }

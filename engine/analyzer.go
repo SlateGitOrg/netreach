@@ -365,6 +365,22 @@ func (a *Analyzer) natReturnRegion(acl *model.ACLNode) hspace.Space {
 	return region
 }
 
+// NATReturnDenied returns the NAT-gateway ports in NATPortRange to which the
+// given NACL denies replies from remote over proto (TCP/UDP only; empty for
+// other protocols). It refines the explanation of a nat-nacl-inbound-return
+// block into concrete ports.
+func NATReturnDenied(acl *model.ACLNode, remote, proto uint32) interval.Set {
+	if !model.HasPorts(proto) {
+		return interval.Set{}
+	}
+	allowed := aclAllowed(aclCheck{step: StepNATReturnPorts, acl: acl, dir: Inbound, addr: RemoteAddr(),
+		portDim: DimInitiatorPt}).
+		Restrict(DimRemote, interval.Single(remote)).
+		Restrict(DimProto, interval.Single(proto)).
+		Project(DimInitiatorPt)
+	return NATPortRange.Subtract(allowed)
+}
+
 // InternetExposure runs InternetIngress for every ENI.
 func (a *Analyzer) InternetExposure(sources interval.Set) []Result {
 	out := make([]Result, 0, len(a.net.ENIs))

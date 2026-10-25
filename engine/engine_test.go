@@ -148,3 +148,17 @@ func TestStringers(t *testing.T) {
 		t.Fatal("Direction")
 	}
 }
+
+func TestNATReturnDenied(t *testing.T) {
+	n := load(t, "nat-egress")
+	acl := n.ACL("acl-pub")
+	if acl == nil || n.ACL("nope") != nil {
+		t.Fatal("ACL lookup")
+	}
+	if got := engine.NATReturnDenied(acl, 0x08080808, 6).String(); got != "1024-2047" {
+		t.Fatalf("tcp denied ports = %s", got)
+	}
+	if !engine.NATReturnDenied(acl, 0x08080808, 17).IsEmpty() || !engine.NATReturnDenied(acl, 0x08080808, 1).IsEmpty() {
+		t.Fatal("udp replies are allowed and ICMP has no ports")
+	}
+}

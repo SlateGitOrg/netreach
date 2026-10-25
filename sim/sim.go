@@ -116,7 +116,7 @@ func peered(n *model.Network, x, y *model.VPCNode) bool {
 }
 
 // InternetIngress evaluates a flow from internet address src to target.
-func InternetIngress(n *model.Network, src uint32, target *model.ENINode, pkt Packet) Verdict {
+func InternetIngress(src uint32, target *model.ENINode, pkt Packet) Verdict {
 	p := pkt.canonical()
 	vpc, sub := target.VPC(), target.Subnet
 	if vpc.IGW == nil {
@@ -186,7 +186,7 @@ func InternalIngress(n *model.Network, src, target *model.ENINode, pkt Packet) V
 }
 
 // Egress evaluates a flow from ENI src to internet address dst.
-func Egress(n *model.Network, src *model.ENINode, dst uint32, pkt Packet) Verdict {
+func Egress(src *model.ENINode, dst uint32, pkt Packet) Verdict {
 	p := pkt.canonical()
 	ss := src.Subnet
 	if !sg(src.SGs, false, dst, p.Proto, p.ServicePort, nil, nil) {

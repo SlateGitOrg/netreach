@@ -209,6 +209,12 @@ func (n *Network) ENIsOfInstance(instance string) []*ENINode {
 	return out
 }
 
+// ACL returns the network ACL with the given ID, or nil.
+func (n *Network) ACL(id string) *ACLNode {
+	a, _ := n.byID[id].(*ACLNode)
+	return a
+}
+
 // Subnet returns the subnet with the given ID, or nil.
 func (n *Network) Subnet(id string) *SubnetNode {
 	s, _ := n.byID[id].(*SubnetNode)

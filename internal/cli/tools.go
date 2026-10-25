@@ -25,19 +25,19 @@ func (e *env) verify(args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(e.stdout, "%-16s %7s %7s %9s\n", "fixture", "checks", "probes", "failures")
+	e.out.printf("%-16s %7s %7s %9s\n", "fixture", "checks", "probes", "failures")
 	checks, probes, failures := 0, 0, 0
 	for _, fx := range fixtures {
 		out := groundtruth.Check(fx)
-		fmt.Fprintf(e.stdout, "%-16s %7d %7d %9d\n", out.Name, out.Checks, out.Probes, len(out.Failures))
+		e.out.printf("%-16s %7d %7d %9d\n", out.Name, out.Checks, out.Probes, len(out.Failures))
 		for _, f := range out.Failures {
-			fmt.Fprintf(e.stdout, "    FAIL %s\n", f)
+			e.out.printf("    FAIL %s\n", f)
 		}
 		checks += out.Checks
 		probes += out.Probes
 		failures += len(out.Failures)
 	}
-	fmt.Fprintf(e.stdout, "%-16s %7d %7d %9d\n", "total", checks, probes, failures)
+	e.out.printf("%-16s %7d %7d %9d\n", "total", checks, probes, failures)
 	if failures > 0 {
 		return fmt.Errorf("%d ground-truth checks failed", failures)
 	}
@@ -65,11 +65,11 @@ func (e *env) gen(args []string) error {
 }
 
 type benchRow struct {
-	label             string
-	enis, rules       int
-	ingress, egress   time.Duration
-	internal          time.Duration
-	boxes, fragments  int
+	label            string
+	enis, rules      int
+	ingress, egress  time.Duration
+	internal         time.Duration
+	boxes, fragments int
 }
 
 func (e *env) bench(args []string) error {
@@ -95,7 +95,7 @@ func (e *env) bench(args []string) error {
 	base := topogen.Params{Seed: *seed, VPCs: 1, SubnetsPerVPC: 4, ENIsPerSubnet: 4, SGsPerVPC: 4,
 		SGRules: 8, ACLRules: 10, ExtraRoutes: 4, PeeringProbability: 0.5}
 
-	fmt.Fprintf(e.stdout, "Scale-out (4 subnets x 4 ENIs per VPC, 8 SG rules, 10 NACL rules/direction, seed %d)\n\n", *seed)
+	e.out.printf("Scale-out (4 subnets x 4 ENIs per VPC, 8 SG rules, 10 NACL rules/direction, seed %d)\n\n", *seed)
 	var rows []benchRow
 	for _, v := range sizeList {
 		p := base
@@ -106,9 +106,9 @@ func (e *env) bench(args []string) error {
 		}
 		rows = append(rows, row)
 	}
-	printBench(e.stdout, rows)
+	printBench(e.out, rows)
 
-	fmt.Fprintf(e.stdout, "\nRule depth (2 VPCs, 4 subnets x 4 ENIs each, seed %d)\n\n", *seed)
+	e.out.printf("\nRule depth (2 VPCs, 4 subnets x 4 ENIs each, seed %d)\n\n", *seed)
 	rows = rows[:0]
 	for _, d := range depthList {
 		p := base
@@ -119,7 +119,7 @@ func (e *env) bench(args []string) error {
 		}
 		rows = append(rows, row)
 	}
-	printBench(e.stdout, rows)
+	printBench(e.out, rows)
 	return nil
 }
 
@@ -185,11 +185,11 @@ func median(ds []time.Duration) time.Duration {
 	return s[len(s)/2]
 }
 
-func printBench(w io.Writer, rows []benchRow) {
-	fmt.Fprintln(w, "| Shape | ENIs | Rules | Internet ingress (all ENIs) | Egress (all ENIs) | Internal (1 src -> all) | Fragments | Boxes |")
-	fmt.Fprintln(w, "|---|---|---|---|---|---|---|---|")
+func printBench(p *printer, rows []benchRow) {
+	p.printf("| Shape | ENIs | Rules | Internet ingress (all ENIs) | Egress (all ENIs) | Internal (1 src -> all) | Fragments | Boxes |\n")
+	p.printf("|---|---|---|---|---|---|---|---|\n")
 	for _, r := range rows {
-		fmt.Fprintf(w, "| %s | %d | %d | %s | %s | %s | %d | %d |\n", r.label, r.enis, r.rules,
+		p.printf("| %s | %d | %d | %s | %s | %s | %d | %d |\n", r.label, r.enis, r.rules,
 			round(r.ingress), round(r.egress), round(r.internal), r.fragments, r.boxes)
 	}
 }

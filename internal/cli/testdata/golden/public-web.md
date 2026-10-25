@@ -81,5 +81,4 @@ Blocked flows (deciding hop):
 | Step | Component | Detail | Flows |
 |---|---|---|---|
 | sg-inbound | sg-web | no inbound rule in sg-web allows this traffic | tcp 0-79,81-442,444-65535; udp all ports; proto 0-5,7-16,18-255 |
-| route-return | rtb-public | 10.0.0.0/16 -> local (local); return traffic would not leave through igw-shop (asymmetric path, dropped) | tcp 80 |
-| route-return | rtb-public | 10.0.0.0/16 -> local (local); return traffic would not leave through igw-shop (asymmetric path, dropped) | tcp 443 |
+| route-return | rtb-public | 10.0.0.0/16 -> local (local); return traffic would not leave through igw-shop (asymmetric path, dropped) | tcp 80,443 |

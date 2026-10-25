@@ -150,11 +150,24 @@ func buildTarget(res *engine.Result) Target {
 			t.Severity = x.Severity
 		}
 	}
+	// Different paths can be dropped by the same hop (e.g. tcp 80 and tcp 443
+	// admitted by different SG rules, then both dropped by the return route);
+	// report one row per deciding hop.
+	byHop := map[engine.Hop]int{}
+	var spaces []hspace.Space
 	for _, f := range res.Blocked {
 		t.Stats.Boxes += f.Space.NumBoxes()
 		h := f.Blocker()
-		t.Blocked = append(t.Blocked, Blocked{Step: h.Step, Component: h.Component, Detail: h.Detail,
-			Flows: Summarize(f.Space).String()})
+		if i, ok := byHop[h]; ok {
+			spaces[i] = spaces[i].Union(f.Space)
+			continue
+		}
+		byHop[h] = len(t.Blocked)
+		spaces = append(spaces, f.Space)
+		t.Blocked = append(t.Blocked, Blocked{Step: h.Step, Component: h.Component, Detail: h.Detail})
+	}
+	for i := range t.Blocked {
+		t.Blocked[i].Flows = Summarize(spaces[i]).String()
 	}
 	return t
 }

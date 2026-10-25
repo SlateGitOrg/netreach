@@ -19,14 +19,14 @@ import (
 
 // Expected is the schema of expected.json.
 type Expected struct {
-	Comment              string                 `json:"comment"`
-	Exposure             map[string]Open        `json:"exposure"`
-	Sources              []SourceExpectation    `json:"sources,omitempty"`
-	InitiatorPorts       []PortExpectation      `json:"initiatorPorts,omitempty"`
-	Egress               map[string]Open        `json:"egress,omitempty"`
-	EgressInitiatorPorts []PortExpectation      `json:"egressInitiatorPorts,omitempty"`
-	Internal             []InternalExpectation  `json:"internal,omitempty"`
-	Probes               []Probe                `json:"probes"`
+	Comment              string                `json:"comment"`
+	Exposure             map[string]Open       `json:"exposure"`
+	Sources              []SourceExpectation   `json:"sources,omitempty"`
+	InitiatorPorts       []PortExpectation     `json:"initiatorPorts,omitempty"`
+	Egress               map[string]Open       `json:"egress,omitempty"`
+	EgressInitiatorPorts []PortExpectation     `json:"egressInitiatorPorts,omitempty"`
+	Internal             []InternalExpectation `json:"internal,omitempty"`
+	Probes               []Probe               `json:"probes"`
 }
 
 // Open is an expected port summary; empty strings mean "nothing".
@@ -36,7 +36,7 @@ type Open struct {
 	Other string `json:"other"`
 }
 
-// SourceExpectation: the internet addresses reaching (eni, proto, port) are
+// SourceExpectation states that the internet addresses reaching (eni, proto, port) are
 // exactly include minus exclude.
 type SourceExpectation struct {
 	ENI     string   `json:"eni"`
@@ -46,7 +46,7 @@ type SourceExpectation struct {
 	Exclude []string `json:"exclude"`
 }
 
-// PortExpectation: the initiator ports that work for (eni, proto, port).
+// PortExpectation states the initiator ports that work for (eni, proto, port).
 type PortExpectation struct {
 	ENI   string `json:"eni"`
 	Proto string `json:"proto"`
@@ -54,7 +54,7 @@ type PortExpectation struct {
 	Ports string `json:"ports"`
 }
 
-// InternalExpectation: the services From can reach on To.
+// InternalExpectation states the services From can reach on To.
 type InternalExpectation struct {
 	From  string `json:"from"`
 	To    string `json:"to"`
@@ -311,7 +311,7 @@ func (c *checker) probe(p Probe) {
 		}
 		remote = ip
 		res = c.an.InternetIngress(interval.Full(interval.MaxIPv4), dst)
-		simV = sim.InternetIngress(c.fx.Network, ip, dst, pkt)
+		simV = sim.InternetIngress(ip, dst, pkt)
 	case "internal":
 		src, dst := c.eni(p.From), c.eni(p.To)
 		if src == nil || dst == nil {
@@ -333,7 +333,7 @@ func (c *checker) probe(p Probe) {
 		}
 		remote = ip
 		res = c.an.Egress(src, interval.Full(interval.MaxIPv4))
-		simV = sim.Egress(c.fx.Network, src, ip, pkt)
+		simV = sim.Egress(src, ip, pkt)
 	default:
 		c.expect(false, "%s: unknown kind", name)
 		return

@@ -137,7 +137,7 @@ func TestDifferentialEngineVersusSimulator(t *testing.T) {
 			checkPartition(t, &res, engine.Universe())
 			for range samplesPerQuery {
 				src, pkt := smp.ip(), smp.packet()
-				want := sim.InternetIngress(net, src, target, pkt)
+				want := sim.InternetIngress(src, target, pkt)
 				got := engineVerdict(t, &res, engine.Flow{Remote: src, Proto: pkt.Proto,
 					InitiatorPort: pkt.InitiatorPort, ServicePort: pkt.ServicePort})
 				if got != want {
@@ -182,7 +182,7 @@ func TestDifferentialEngineVersusSimulator(t *testing.T) {
 			checkPartition(t, &eg, engine.Universe())
 			for range egressSamplesPerENI {
 				dst, pkt := smp.ip(), smp.packet()
-				want := sim.Egress(net, target, dst, pkt)
+				want := sim.Egress(target, dst, pkt)
 				got := engineVerdict(t, &eg, engine.Flow{Remote: dst, Proto: pkt.Proto,
 					InitiatorPort: pkt.InitiatorPort, ServicePort: pkt.ServicePort})
 				if got != want {

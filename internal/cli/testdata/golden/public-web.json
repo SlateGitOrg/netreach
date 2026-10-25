@@ -291,13 +291,7 @@
           "step": "route-return",
           "component": "rtb-public",
           "detail": "10.0.0.0/16 -> local (local); return traffic would not leave through igw-shop (asymmetric path, dropped)",
-          "flows": "tcp 80"
-        },
-        {
-          "step": "route-return",
-          "component": "rtb-public",
-          "detail": "10.0.0.0/16 -> local (local); return traffic would not leave through igw-shop (asymmetric path, dropped)",
-          "flows": "tcp 443"
+          "flows": "tcp 80,443"
         }
       ],
       "stats": {
