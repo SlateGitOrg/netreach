@@ -7,7 +7,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/archit2501/netreach/interval"
+	"github.com/SlateGitOrg/netreach/interval"
 )
 
 // ValidationError lists every problem found in a snapshot.

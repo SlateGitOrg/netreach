@@ -10,7 +10,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/archit2501/netreach/report"
+	"github.com/SlateGitOrg/netreach/report"
 )
 
 // Exit codes.

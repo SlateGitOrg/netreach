@@ -17,7 +17,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/archit2501/netreach/interval"
+	"github.com/SlateGitOrg/netreach/interval"
 )
 
 // Box is a product of non-empty interval sets, one per dimension.

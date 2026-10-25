@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/archit2501/netreach/hspace"
-	"github.com/archit2501/netreach/interval"
-	"github.com/archit2501/netreach/model"
+	"github.com/SlateGitOrg/netreach/hspace"
+	"github.com/SlateGitOrg/netreach/interval"
+	"github.com/SlateGitOrg/netreach/model"
 )
 
 // Kind is the type of reachability question a Result answers.

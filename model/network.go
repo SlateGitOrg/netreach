@@ -3,7 +3,7 @@ package model
 import (
 	"slices"
 
-	"github.com/archit2501/netreach/interval"
+	"github.com/SlateGitOrg/netreach/interval"
 )
 
 // Network is a compiled, validated snapshot. All references are resolved to

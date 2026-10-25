@@ -3,7 +3,7 @@ package engine
 import (
 	"strings"
 
-	"github.com/archit2501/netreach/hspace"
+	"github.com/SlateGitOrg/netreach/hspace"
 )
 
 // Step names the kind of check a hop records. Each step appears at most once

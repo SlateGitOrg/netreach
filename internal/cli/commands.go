@@ -8,11 +8,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/archit2501/netreach/engine"
-	"github.com/archit2501/netreach/interval"
-	"github.com/archit2501/netreach/model"
-	"github.com/archit2501/netreach/report"
-	"github.com/archit2501/netreach/sim"
+	"github.com/SlateGitOrg/netreach/engine"
+	"github.com/SlateGitOrg/netreach/interval"
+	"github.com/SlateGitOrg/netreach/model"
+	"github.com/SlateGitOrg/netreach/report"
+	"github.com/SlateGitOrg/netreach/sim"
 )
 
 func (e *env) load(path string) (*model.Network, error) {

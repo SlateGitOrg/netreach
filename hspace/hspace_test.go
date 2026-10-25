@@ -4,7 +4,7 @@ import (
 	"math/rand/v2"
 	"testing"
 
-	"github.com/archit2501/netreach/interval"
+	"github.com/SlateGitOrg/netreach/interval"
 )
 
 // Brute-force oracle: a 4-D domain small enough (8·4·4·8 = 1024 points) to

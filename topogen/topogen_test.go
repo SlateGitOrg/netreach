@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/archit2501/netreach/model"
+	"github.com/SlateGitOrg/netreach/model"
 )
 
 func TestGeneratedSnapshotsAlwaysCompile(t *testing.T) {

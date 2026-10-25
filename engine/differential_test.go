@@ -5,12 +5,12 @@ import (
 	"math/rand/v2"
 	"testing"
 
-	"github.com/archit2501/netreach/engine"
-	"github.com/archit2501/netreach/hspace"
-	"github.com/archit2501/netreach/interval"
-	"github.com/archit2501/netreach/model"
-	"github.com/archit2501/netreach/sim"
-	"github.com/archit2501/netreach/topogen"
+	"github.com/SlateGitOrg/netreach/engine"
+	"github.com/SlateGitOrg/netreach/hspace"
+	"github.com/SlateGitOrg/netreach/interval"
+	"github.com/SlateGitOrg/netreach/model"
+	"github.com/SlateGitOrg/netreach/sim"
+	"github.com/SlateGitOrg/netreach/topogen"
 )
 
 // sampler draws flows biased toward rule boundaries: every CIDR edge and port

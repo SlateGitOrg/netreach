@@ -12,7 +12,7 @@ package sim
 import (
 	"strings"
 
-	"github.com/archit2501/netreach/model"
+	"github.com/SlateGitOrg/netreach/model"
 )
 
 // natPortLo/natPortHi bound the NAT gateway's translated source ports.

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/archit2501/netreach/interval"
+	"github.com/SlateGitOrg/netreach/interval"
 )
 
 // IP protocol numbers with port semantics.

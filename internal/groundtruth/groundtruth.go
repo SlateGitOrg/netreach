@@ -10,11 +10,11 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/archit2501/netreach/engine"
-	"github.com/archit2501/netreach/interval"
-	"github.com/archit2501/netreach/model"
-	"github.com/archit2501/netreach/report"
-	"github.com/archit2501/netreach/sim"
+	"github.com/SlateGitOrg/netreach/engine"
+	"github.com/SlateGitOrg/netreach/interval"
+	"github.com/SlateGitOrg/netreach/model"
+	"github.com/SlateGitOrg/netreach/report"
+	"github.com/SlateGitOrg/netreach/sim"
 )
 
 // Expected is the schema of expected.json.

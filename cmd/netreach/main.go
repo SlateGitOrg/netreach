@@ -5,7 +5,7 @@ package main
 import (
 	"os"
 
-	"github.com/archit2501/netreach/internal/cli"
+	"github.com/SlateGitOrg/netreach/internal/cli"
 )
 
 func main() {

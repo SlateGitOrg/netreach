@@ -1,3 +1,3 @@
-module github.com/archit2501/netreach
+module github.com/SlateGitOrg/netreach
 
 go 1.23

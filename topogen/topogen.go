@@ -12,7 +12,7 @@ import (
 	"math/rand/v2"
 	"slices"
 
-	"github.com/archit2501/netreach/model"
+	"github.com/SlateGitOrg/netreach/model"
 )
 
 // Params controls the size and shape of a generated snapshot.

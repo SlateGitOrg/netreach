@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/archit2501/netreach/interval"
+	"github.com/SlateGitOrg/netreach/interval"
 )
 
 // base returns a small valid snapshot that each invalid case mutates.

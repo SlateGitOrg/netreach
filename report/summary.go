@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/archit2501/netreach/engine"
-	"github.com/archit2501/netreach/hspace"
-	"github.com/archit2501/netreach/interval"
-	"github.com/archit2501/netreach/model"
+	"github.com/SlateGitOrg/netreach/engine"
+	"github.com/SlateGitOrg/netreach/hspace"
+	"github.com/SlateGitOrg/netreach/interval"
+	"github.com/SlateGitOrg/netreach/model"
 )
 
 // PortSummary projects a flow space onto (protocol, service port).

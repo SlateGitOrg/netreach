@@ -6,8 +6,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/archit2501/netreach/interval"
-	"github.com/archit2501/netreach/model"
+	"github.com/SlateGitOrg/netreach/interval"
+	"github.com/SlateGitOrg/netreach/model"
 )
 
 // WriteJSON writes r as indented JSON.

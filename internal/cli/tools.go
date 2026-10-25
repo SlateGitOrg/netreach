@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/archit2501/netreach/engine"
-	"github.com/archit2501/netreach/internal/groundtruth"
-	"github.com/archit2501/netreach/interval"
-	"github.com/archit2501/netreach/model"
-	"github.com/archit2501/netreach/topogen"
+	"github.com/SlateGitOrg/netreach/engine"
+	"github.com/SlateGitOrg/netreach/internal/groundtruth"
+	"github.com/SlateGitOrg/netreach/interval"
+	"github.com/SlateGitOrg/netreach/model"
+	"github.com/SlateGitOrg/netreach/topogen"
 )
 
 func (e *env) verify(args []string) error {
