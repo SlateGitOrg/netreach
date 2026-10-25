@@ -29,8 +29,10 @@ type Query struct {
 	// From is the source: an address set for internet ingress, an ENI ID for
 	// internal ingress and egress.
 	From string `json:"from"`
-	// Remote describes the remote address set (sources or destinations).
-	Remote string `json:"remote"`
+	// Remote describes the remote address set; RemoteRole says whether those
+	// addresses are flow sources (ingress) or destinations (egress).
+	Remote     string `json:"remote"`
+	RemoteRole string `json:"remoteRole"`
 }
 
 // Summary aggregates the targets.
@@ -97,9 +99,12 @@ type Blocked struct {
 func Build(net *model.Network, kind engine.Kind, from string, remote interval.Set, results []engine.Result) Report {
 	r := Report{
 		Tool: "netreach", Version: Version, Snapshot: net.Name,
-		Query:   Query{Kind: kind, From: from, Remote: DescribeAddresses(remote)},
+		Query:   Query{Kind: kind, From: from, Remote: DescribeAddresses(remote), RemoteRole: "source"},
 		Summary: Summary{Targets: len(results), Findings: map[Severity]int{}},
 		Targets: make([]Target, 0, len(results)),
+	}
+	if kind == engine.InternetEgress {
+		r.Query.RemoteRole = "destination"
 	}
 	for i := range results {
 		t := buildTarget(&results[i])
@@ -162,7 +167,7 @@ func exposuresOf(kind engine.Kind, b hspace.Box, path []engine.Hop) []Exposure {
 		x.Remote = remote.CIDRStrings()
 		x.RemoteSummary = DescribeAddresses(remote)
 		x.Path = path
-		x.Severity, x.Reason = Info, string(kind)
+		x.Severity, x.Reason = Info, "not graded ("+string(kind)+")"
 		if kind == engine.InternetIngress {
 			x.Severity, x.Reason = Assess(proto, ports, remote)
 		}
@@ -196,5 +201,14 @@ func compareExposure(a, b Exposure) int {
 	if c := cmp.Compare(a.Protocol, b.Protocol); c != 0 {
 		return c
 	}
-	return cmp.Compare(a.Ports, b.Ports)
+	return cmp.Compare(firstPort(a.Ports), firstPort(b.Ports))
+}
+
+func firstPort(ports string) uint32 {
+	s, err := interval.Parse(ports)
+	if err != nil {
+		return 0
+	}
+	v, _ := s.Min()
+	return v
 }

@@ -24,7 +24,7 @@ func WriteMarkdown(w io.Writer, r Report) error {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# netreach report: %s\n\n", r.Snapshot)
 	fmt.Fprintf(&b, "- Query: **%s** from `%s`\n", r.Query.Kind, r.Query.From)
-	fmt.Fprintf(&b, "- Remote addresses: `%s`\n", r.Query.Remote)
+	fmt.Fprintf(&b, "- Remote %s addresses: `%s`\n", r.Query.RemoteRole, r.Query.Remote)
 	fmt.Fprintf(&b, "- Targets: %d analysed, %d reachable\n", r.Summary.Targets, r.Summary.Reachable)
 	if len(r.Summary.Findings) > 0 {
 		var parts []string
@@ -43,14 +43,18 @@ func WriteMarkdown(w io.Writer, r Report) error {
 		fmt.Fprintf(&b, "| %s | %s | %s | %s | %s | %s | %s |\n", targetLabel(t), t.PrivateIP, dash(t.PublicIP),
 			dash(t.Open.TCP), dash(t.Open.UDP), dash(t.Open.Other), dash(string(t.Severity)))
 	}
+	word, column := "from", "Sources"
+	if r.Query.RemoteRole == "destination" {
+		word, column = "to", "Destinations"
+	}
 	for _, t := range r.Targets {
-		writeTarget(&b, t)
+		writeTarget(&b, t, word, column)
 	}
 	_, err := io.WriteString(w, b.String())
 	return err
 }
 
-func writeTarget(b *strings.Builder, t Target) {
+func writeTarget(b *strings.Builder, t Target, word, column string) {
 	fmt.Fprintf(b, "\n## %s\n\n", targetLabel(t))
 	fmt.Fprintf(b, "Subnet `%s` in `%s`", t.Subnet, t.VPC)
 	if t.Peer != "" {
@@ -60,7 +64,7 @@ func writeTarget(b *strings.Builder, t Target) {
 	if !t.Reachable {
 		b.WriteString("**Not reachable.**\n")
 	} else {
-		b.WriteString("| Severity | Protocol | Ports | Remote | Initiator ports | Reason |\n|---|---|---|---|---|---|\n")
+		fmt.Fprintf(b, "| Severity | Protocol | Ports | %s | Initiator ports | Reason |\n|---|---|---|---|---|---|\n", column)
 		for _, e := range t.Exposures {
 			fmt.Fprintf(b, "| %s | %s | %s | %s | %s | %s |\n", e.Severity, e.Protocol, dash(e.Ports),
 				e.RemoteSummary, dash(e.InitiatorPorts), e.Reason)
@@ -73,7 +77,7 @@ func writeTarget(b *strings.Builder, t Target) {
 				continue
 			}
 			seen[key] = true
-			fmt.Fprintf(b, "\n- %s %s from %s\n", e.Protocol, dash(e.Ports), e.RemoteSummary)
+			fmt.Fprintf(b, "\n- %s %s %s %s\n", e.Protocol, dash(e.Ports), word, e.RemoteSummary)
 			for i, h := range e.Path {
 				fmt.Fprintf(b, "  %d. `%s` %s: %s\n", i+1, h.Step, h.Component, h.Detail)
 			}

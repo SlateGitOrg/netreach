@@ -206,9 +206,9 @@ func routeSplit(rt *model.RouteTableNode, addr Addr, space hspace.Space) []route
 
 func routeText(rt *model.RouteTableNode, r *model.RouteNode, lookedUp string) string {
 	if r == nil {
-		return fmt.Sprintf("%s: no route matches %s", rt.ID, lookedUp)
+		return fmt.Sprintf("no route in %s matches %s", rt.ID, lookedUp)
 	}
-	return fmt.Sprintf("%s: %s -> %s (%s)", rt.ID, r.Dest, r.Target, r.Kind)
+	return fmt.Sprintf("%s -> %s (%s)", r.Dest, r.Target, r.Kind)
 }
 
 // routeStage partitions by LPM and accepts the parts for which ok returns
